@@ -1,145 +1,208 @@
 <?php
 
-require_once(__DIR__ . '/autoload.php');
 
-$presskit = new Presskit\Presskit;
-$content = $presskit->parse(__DIR__ . '/data.xml');
-
-// Language logic
-
-include 'lang/TranslateTool.php';
-$language = TranslateTool::loadLanguage(isset($_GET['l']) ? $_GET['l'] : null, 'index.php');
-$languageQuery = ($language != TranslateTool::getDefaultLanguage() ? '?l='. $language : '');
-
-if (file_exists('data-'. $language .'.xml'))
-	$xml = simplexml_load_file('data-'. $language .'.xml');
-else
-	$xml = simplexml_load_file('data.xml');
-
-foreach( $xml->children() as $child )
+spl_autoload_register(function ($class)
 {
-	switch( $child->getName() )
+    $filename = str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php';
+    if (is_file(__DIR__ . '/' . $filename)) {
+        require_once(__DIR__ . '/' . $filename);
+    }
+});
+
+
+/* @var $config \Presskit\Config */
+$config   = require(__DIR__.'/index.config.php');
+$presskit = true;
+try
+{
+	$presskit = new Presskit\Presskit($config, $_GET, $_POST, $_REQUEST);
+	switch($presskit->getRequest())
 	{
-		case("analytics"):
-			define("ANALYTICS", $child);
-			break;				
-	}
-}
-
-function parseLink($uri)
-{
-    $parsed = trim($uri);
-    if( strpos($parsed, "http://") === 0 )
-        $parsed = substr($parsed, 7);
-    if (strpos($parsed, "https://") === 0 )
-        $parsed = substr($parsed, 8);
-    if( strpos($parsed, "www.") === 0 )
-        $parsed = substr($parsed, 4);
-    if( strrpos($parsed, "/") == strlen($parsed) - 1)
-        $parsed = substr($parsed, 0, strlen($parsed) - 1);
-    if( substr($parsed,-1,1) == "/" )
-    	$parsed = substr($parsed, 0, strlen($parsed) - 1);
-
-    return $parsed;
-}
-
-$languages = TranslateTool::getLanguages();
-
-$company = array(
-	'releases' => array(),
-	'images_archive_size' => 0,
-	'images' => array(),
-	'logo_archive_size' => 0,
-	'logo' => NULL,
-	'icon' => NULL,
-	'google_analytics' => NULL,
-);
-
-$defaultDirectories = array(
-	'.',
-	'..',
-	'lang',
-	'images',
-	'trailers',
-);
-
-$dir = new DirectoryIterator(dirname(__FILE__));
-foreach ($dir as $file) {
-	if ($file->isDir()) {
-		$filename = $file->getFilename();
-		$filenameStart = substr($filename, 0 , 1);
-
-		if (! in_array($filename, $defaultDirectories) && $filenameStart !== '_' && $filenameStart !== '.') {
-			$url = 'sheet.php?p=' . $filename;
-			if ($language !== TranslateTool::getDefaultLanguage()) {
-				$url .= '&l=' . $language;
-			}
-
-			$company['releases'][] = array(
-				'name' => ucwords(str_replace('_', ' ', $filename)),
-				'url' => $url,
+		case \Presskit\Request::REQUEST_COMPANY_PAGE:
+		{
+			Presskit\TranslateTool::$languageDir = $config->languageDirname;
+			echo $presskit->output(
+				$presskit->parseCompany($config->dataXmlFilename),
+				$config->templateCompanyPhpFilename,
+				$config->currentDir
+					.'/index'
+					.($presskit->getAvailableLanguages() > 1
+						? '-'.$presskit->getCurrentLanguage()
+						: ''
+					 )
+					.'.html'
 			);
+			exit;
+			break;
+		}
+		case \Presskit\Request::REQUEST_RELEASE_PAGE:
+		{
+			Presskit\TranslateTool::$languageDir = $config->languageDirname;
+			$companyContent = $presskit->parseCompany($config->dataXmlFilename);
+
+			$release = $presskit->getRequestRelease();
+			Presskit\TranslateTool::$languageDir = $config->currentDir
+				.$release['dir']
+				.DIRECTORY_SEPARATOR
+				.$presskit->getRelativePath($config->languageDirname);
+
+			if (is_readable($config->currentDir.$release['dir'].DIRECTORY_SEPARATOR.'index.config.php'))
+			{
+				$releaseConfig = require($config->currentDir.$release['dir'].DIRECTORY_SEPARATOR.'index.config.php');
+				if ($releaseConfig->cssFilenames && !empty($releaseConfig->cssFilenames))
+				{
+					$config->cssFilenames = array_unique(
+						array_merge(
+							$config->cssFilenames,
+							$releaseConfig->cssFilenames
+						)
+					);
+				}
+				if ($releaseConfig->skipEmpty && !empty($releaseConfig->skipEmpty))
+				{
+					$config->skipEmpty = array_unique(
+						array_merge(
+							$config->skipEmpty,
+							$releaseConfig->skipEmpty
+						)
+					);
+				}
+				if ($releaseConfig->autoCreateStaticHtml !== null && is_bool($releaseConfig->autoCreateStaticHtml))
+				{
+					$config->autoCreateStaticHtml = $releaseConfig->autoCreateStaticHtml;
+				}
+				if ($releaseConfig->googleAnalytics && trim($releaseConfig->googleAnalytics) != '')
+				{
+					$config->googleAnalytics = $releaseConfig->googleAnalytics;
+				}
+				if ($releaseConfig->pressRequestCopy && is_array($releaseConfig->pressRequestCopy) && count($releaseConfig->pressRequestCopy) > 0)
+				{
+					$tmp = $config->pressRequestCopy;
+					if (!isset($tmp) || !is_array($tmp))
+					{
+						$tmp = array();
+						$config->pressRequestCopy = $tmp;
+					}
+					$config->pressRequestCopy = \Presskit\Config::array_merge_recursive_distinct(
+						$config->pressRequestCopy,
+						$releaseConfig->pressRequestCopy
+					);
+					unset($tmp);
+				}
+				$config->imageIconFilename    = $releaseConfig->relativePath($releaseConfig->imageIconFilename);
+				$config->imageLogoFilename    = $releaseConfig->relativePath($releaseConfig->imageLogoFilename);
+				$config->imageLogoZipFilename = $releaseConfig->relativePath($releaseConfig->imageLogoZipFilename);
+			}
+
+			// ugly hack to modify "currentDir" to: "currentDir/releaseDir"!
+			// REMEMBER: all $config->currentDir is now pointed into release-page! (so: Presskit\Install reflect it!)
+			$prop = new ReflectionProperty($config, 'currentDir');
+			$prop->setAccessible(true);
+			$prop->setValue($config, $config->currentDir.DIRECTORY_SEPARATOR.$release['dir'].DIRECTORY_SEPARATOR);
+			$prop->setAccessible(false);
+
+			$content = $presskit->parseRelease($config->dataXmlFilename, $release['dir']);
+
+			$content->setCompany($companyContent);
+			$content->setAdditionalInfo(array_merge(
+				(array)$content->getAdditionalInfo(),
+				array('release_name' => $release['dir']),
+				array('pressRequestCopy' => $config->pressRequestCopy)
+			));
+
+			if ($content->getMonetization() == Presskit\Content\SharedContent::MONETIZATION_SHARED_COMPANY)
+			{
+				$content->setMonetization($companyContent->getMonetization());
+			}
+
+			echo $presskit->output(
+				$content,
+				$config->templateReleasePhpFilename,
+				$config->currentDir
+					.'/index'
+					.($presskit->getAvailableLanguages() > 1
+						? '-'.$presskit->getCurrentLanguage()
+						: ''
+					 )
+					.'.html'
+			);
+			exit;
+
+			break;
+		}
+		case \Presskit\Request::REQUEST_CREDITS_PAGE:
+		{
+			Presskit\TranslateTool::$languageDir = $config->languageDirname;
+			Presskit\TranslateTool::loadLanguage(
+				$config->languageDirname,
+				$presskit->getCurrentLanguage()
+			);
+
+			echo $presskit->output(
+				array(
+					'config'   => $config,
+					'presskit' => $presskit,
+				),
+				$config->templateCreditsPhpFilename,
+				$config->currentDir.DIRECTORY_SEPARATOR
+					.\Presskit\Request::REQUEST_CREDITS_PAGE
+					.DIRECTORY_SEPARATOR.'index-en.html',
+				true
+			);
+			exit;
+			break;
+		}
+		default:
+		{
+			throw new Exception('Invalid request!');
+			break;
 		}
 	}
 }
-
-if (file_exists('images/images.zip')) {
-	$file = new SplFileInfo('images/images.zip');
-	$bytes = $file->getSize();
-
-	$units = ['B', 'KB', 'MB'];
-
-	for ($unit = 0; $bytes > 1024 && $unit < (count($units) - 1); $unit++) {
-		$bytes /= 1024;
-	}
-
-	$bytes = round($bytes, 2);
-	$company['images_archive_size'] = $bytes . ' ' . $units[$unit];
-}
-
-$dir = new DirectoryIterator(dirname(__FILE__) . '/images');
-foreach ($dir as $file) {
-	$finfo = finfo_open(FILEINFO_MIME_TYPE);
-
-	if ($file->isFile()) {
-		$info = new finfo;
-		$mimeType = $info->file($file->getPathname(), FILEINFO_MIME);
-
-		if (substr($mimeType, 0, 5) === 'image') {
-			$filename = $file->getFilename();
-
-			if (substr($filename, 0, 4) !== 'logo' && substr($filename, 0, 4) !== 'icon' && substr($filename, 0, 6) !== 'header') {
-				$company['images'][] = $file->getFilename();
+catch (Presskit\Exceptions\DataXmlFilenameMissingException $e)
+{
+	try
+	{
+		$presskitInstall = new Presskit\Install($config);
+		switch($e->getCode())
+		{
+			case Presskit\Exceptions\DataXmlFilenameMissingException::CODE_COMPANY:
+			{
+				$presskitInstall->installCompany();
+				break;
+			}
+			case Presskit\Exceptions\DataXmlFilenameMissingException::CODE_RELEASE:
+			{
+				$presskitInstall->installRelease($presskit->getRequestRelease());
+				break;
+			}
+			default:
+			{
+				throw $e;
+				break;
 			}
 		}
+		header('Location: '.$_SERVER['REQUEST_URI']);
+		exit;
+	}
+	catch(\Exception $e)
+	{
+		throw $e;
 	}
 }
-
-if (file_exists('images/logo.zip')) {
-	$file = new SplFileInfo('images/logo.zip');
-	$bytes = $file->getSize();
-
-	$units = ['B', 'KB', 'MB'];
-
-	for ($unit = 0; $bytes > 1024 && $unit < (count($units) - 1); $unit++) {
-		$bytes /= 1024;
-	}
-
-	$bytes = round($bytes, 2);
-	$company['logo_archive_size'] = $bytes . ' ' . $units[$unit];
+catch (Presskit\Exceptions\ReleaseNotFoundException $e)
+{
+	header('HTTP/1.0 404 Not Found', true, 404);
+	include_once($config->template404PhpFilename);
+	exit;
 }
-
-if (file_exists('images/logo.png')) {
-	$company['logo'] = 'logo.png';
+catch (Presskit\Exceptions\ReleaseNameIsMissingCreateSome $e)
+{
+	header('HTTP/1.0 404 Not Found', true, 404);
+	$errorMessages = array(
+		get_class($e),
+		implode('.<br/>', explode('. ', $e->getMessage()))
+	);
+	include_once($config->template404PhpFilename);
+	exit;
 }
-
-if (file_exists('images/icon.png')) {
-	$company['icon'] = 'icon.png';
-}
-
-//if (defined("ANALYTICS") && strlen(ANALYTICS) > 10 )
-if (defined('ANALYTICS')) {
-	$company['google_analytics'] = ANALYTICS;
-}
-
-include('./_templates/company.php');

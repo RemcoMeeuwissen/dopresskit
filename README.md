@@ -41,6 +41,30 @@ As development of presskit() furthered, an increasing amount of fellow independe
 
 presskit(), in the spirit of independent developers helping eachother out when it comes to making games or doing business, is completely free for anyone to use.
 
+Installation/Usage:
+==========
+1) git clone this-repository
+
+2) cd into/this-repository
+
+3) run: $ `php -S localhost:8888 -d $(pwd)`
+
+4) open: your browser at address: http://localhost:8888
+
+5) update/modify content
+
+5.1) update/modify: "data-en.xml" file (~as a company page)
+
+5.2) create sub-directory, eg: "my-game-name"
+
+5.3) refresh page at browser or go to: http://localhost:8888
+
+5.4) click to "Projects", you will be redirected into "my-game-name" release page inc. installation
+
+5.5) update/modify: "my-game-name/data-en.xml" file (~as a release page)
+
+hint: you can also wget a static version of press-kit page, eg: `wget -O ./my-game-name.html http://localhost:8888/?p=my-game-name`
+
 
 presskit() was only possible thanks to these fine folks!
 ==========

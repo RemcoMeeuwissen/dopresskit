@@ -7,6 +7,10 @@ use Presskit\Value\TrailerLocation;
 
 class Trailer
 {
+	const FORMAT_MOV = 'mov';
+	const FORMAT_MP4 = 'mp4';
+	const FORMAT_AVI = 'avi';
+
     private $name;
     private $locations = [];
 
@@ -34,7 +38,16 @@ class Trailer
         return '';
     }
 
-    public function name()
+	static public function getFileFormats()
+	{
+		return array(
+			self::FORMAT_MOV,
+			self::FORMAT_MP4,
+			self::FORMAT_AVI,
+		);
+	}
+
+	public function name()
     {
         if ((string) $this->name === '') {
             return '';
@@ -62,7 +75,7 @@ class Trailer
 
         return '';
     }
-    
+
     public function vimeo()
     {
         foreach ($this->locations as $location) {

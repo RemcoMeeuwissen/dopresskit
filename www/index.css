@@ -5,6 +5,10 @@ body {
 	line-height:1.6em;
 }
 
+.clear {
+	clear: both;
+}
+
 img {
 	width: 100%;
 }
@@ -32,7 +36,7 @@ img {
 }
 
 #content h2 {
-	font-family: Georgia, "Times New Roman", Times, serif;s
+	font-family: Georgia, "Times New Roman", Times, serif;
 }
 
 #content img.header {
@@ -69,6 +73,22 @@ img {
 	left: 0;
 	width: 100%;
 	height: 100%;
+}
+
+#trailers-inner {
+	display: block;
+	float: left;
+	margin-bottom: 2px;
+	width: 100%;
+	padding-bottom: 1em;
+}
+
+#trailer-name {
+	font-size: 140%;
+}
+
+#trailers-inner .uk-alert {
+	background-color: #e6f2ff;
 }
 
 @media (max-width: 767px) {

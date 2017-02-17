@@ -13,7 +13,7 @@ class XML
     private $content;
     private $data;
 
-    public function __construct($file, Content $content)
+    public function __construct($file, /*Content*/ $content)
     {
         $this->content = $content;
         $this->data = new SimpleXMLElement(file_get_contents($file));
@@ -21,24 +21,60 @@ class XML
 
     public function parse()
     {
-        $this->findTitle();
-        $this->findFoundingDate();
-        $this->findReleaseDate();
-        $this->findWebsite();
-        $this->findPressContact();
-        $this->findLocation();
-        $this->findSocialContacts();
-        $this->findAddress();
-        $this->findPhone();
-        $this->findDescription();
-        $this->findHistory();
-        $this->findFeatures();
+		if ($this->content instanceof \Presskit\Content\CompanyContent)
+		{
+			return $this->parseCompany();
+		}
+		else
+		if ($this->content instanceof \Presskit\Content\ReleaseContent)
+		{
+			return $this->parseRelease();
+		}
+		else
+		{
+			throw new \Exception('Unimplemented Content!');
+		}
+	}
+
+	private function parseShared()
+	{
+		$this->findTitle();
+		$this->findWebsite();
+		$this->findDescription();
         $this->findTrailers();
         $this->findAwards();
         $this->findQuotes();
         $this->findAdditionalLinks();
         $this->findCredits();
+		$this->findMonetization();
+		$this->findSocialContacts();
+	}
+
+	private function parseCompany()
+	{
+		$this->parseShared();
+
+        $this->findFoundingDate();
+        $this->findPressContact();
+        $this->findLocation(); // tag: based-in
+        $this->findAddress();
+        $this->findPhone();
+        $this->findCompanyHistory();
         $this->findContacts();
+
+        return $this->content;
+    }
+
+    public function parseRelease()
+    {
+		$this->parseShared();
+
+        $this->findReleaseDate();
+		$this->findPressCanRequestCopy();
+		$this->findPlatforms();
+		$this->findPrices();
+		$this->findReleaseHistory();
+		$this->findFeatures();
 
         return $this->content;
     }
@@ -78,6 +114,13 @@ class XML
         }
     }
 
+    private function findPressCanRequestCopy()
+    {
+        if (count($this->data->{'press-can-request-copy'}) > 0) {
+            $this->content->setPressCanRequestCopy($this->data->{'press-can-request-copy'});
+        }
+    }
+
     private function findLocation()
     {
         if (count($this->data->{'based-in'}) > 0) {
@@ -87,17 +130,45 @@ class XML
 
     private function findSocialContacts()
     {
-        if (count($this->data->socials) > 0) {
-            foreach ($this->data->socials->social as $social) {
-                $this->content->addSocialContact($social->name, $social->link);
-            }
+        if (count($this->data->socials) > 0)
+		{
+			if ((string)$this->data->socials == '@company')
+			{
+				$this->content->addSocialContact('@company', 'http://@company');
+			}
+			else
+			{
+				foreach ($this->data->socials->social as $social)
+				{
+					$name = $social->name;
+					foreach($social->name->attributes() as $attr => $value)
+					{
+						if (preg_match('/^htmlSpecialChars/i', $attr) && $this->getBoolean(trim($value)))
+						{
+							$name = htmlspecialchars_decode($name);
+							break;
+						}
+					}
+					$this->content->addSocialContact($name, $social->link);
+				}
+			}
         }
     }
 
     private function findAddress()
     {
-        if (count($this->data->address) > 0) {
-            foreach ($this->data->address->line as $addressLine) {
+        if (count($this->data->address) > 0)
+		{
+			foreach($this->data->address[0]->attributes() as $attr => $value)
+			{
+				if (preg_match('/^url$/i', $attr) && trim($value) != '')
+				{
+					$this->content->addAddressUrl(trim($value));
+					break;
+				}
+			}
+            foreach ($this->data->address->line as $addressLine)
+			{
                 $this->content->addAddressLine($addressLine);
             }
         }
@@ -112,18 +183,63 @@ class XML
 
     private function findDescription()
     {
-        if (count($this->data->description) > 0) {
-            $this->content->setDescription($this->data->description);
+        if (count($this->data->description) > 0)
+		{
+			$tagText = $this->data->description;
+			foreach($tagText->attributes() as $attr => $value)
+			{
+				if (preg_match('/^htmlSpecialChars/i', $attr) && $this->getBoolean(trim($value)))
+				{
+					$tagText = htmlspecialchars_decode($tagText);
+					break;
+				}
+			}
+            $this->content->setDescription($tagText);
         }
     }
 
-    private function findHistory()
+	private function findCompanyHistory()
+	{
+		if (count($this->data->histories) > 0)
+		{
+			foreach ($this->data->histories->history as $history)
+			{
+				$tagText = $history->text;
+				foreach($tagText->attributes() as $attr => $value)
+				{
+					if (preg_match('/^htmlSpecialChars/i', $attr) && $this->getBoolean(trim($value)))
+					{
+						$tagText = htmlspecialchars_decode($tagText);
+						break;
+					}
+				}
+				$this->content->addHistory($history->header, trim($tagText));
+			}
+		}
+	}
+
+    private function findReleaseHistory()
     {
-        if (count($this->data->histories) > 0) {
-            foreach ($this->data->histories->history as $history) {
-                $this->content->addHistory($history->header, $history->text);
-            }
+        if (count($this->data->history) > 0) {
+            $this->content->addHistory('unused', $this->data->history);
         }
+		else
+		if (count($this->data->histories) > 0)
+		{
+			foreach ($this->data->histories->history as $history)
+			{
+				$tagText = $history->text;
+				foreach($tagText->attributes() as $attr => $value)
+				{
+					if (preg_match('/^htmlSpecialChars/i', $attr) && $this->getBoolean(trim($value)))
+					{
+						$tagText = htmlspecialchars_decode($tagText);
+						break;
+					}
+				}
+				$this->content->addHistory($history->header, trim($tagText));
+			}
+		}
     }
 
     private function findFeatures()
@@ -135,10 +251,38 @@ class XML
         }
     }
 
+    private function findPlatforms()
+    {
+        if (count($this->data->platforms) > 0) {
+            foreach ($this->data->platforms->platform as $platform) {
+                $this->content->addPlatform($platform->name, $platform->link, $platform->email);
+            }
+        }
+    }
+
+    private function findPrices()
+    {
+        if (count($this->data->prices) > 0) {
+            foreach ($this->data->prices->price as $price) {
+                $this->content->addPrice($price->currency, $price->value);
+            }
+        }
+    }
+
     private function findTrailers()
     {
-        if (count($this->data->trailers) > 0) {
-            foreach ($this->data->trailers->trailer as $trailer) {
+        if (count($this->data->trailers) > 0)
+		{
+			foreach($this->data->trailers[0]->attributes() as $attr => $value)
+			{
+				if (preg_match('/^skipEmpty/i', $attr) && trim($value) != '')
+				{
+					$this->content->setSkipEmpty('trailers', trim($value));
+					break;
+				}
+			}
+            foreach ($this->data->trailers->trailer as $trailer)
+			{
                 $locations = [];
 
                 if (count($trailer->youtube) > 0) {
@@ -206,4 +350,26 @@ class XML
             }
         }
     }
+
+	private function findMonetization()
+	{
+		if (count($this->data->{'monetization-permission'}) > 0) {
+            $this->content->setMonetization($this->data->{'monetization-permission'});
+        }
+	}
+
+	private function getBoolean($value)
+	{
+		if (
+			   preg_match('/^(yes|true|t|1)/i', (string)$value)
+			|| $value === true
+		   )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 }

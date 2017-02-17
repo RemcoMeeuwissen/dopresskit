@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <game>
 	<title>Game Name</title>
@@ -9,7 +9,10 @@
 	<platforms>
 		<platform>
 			<name>PC / Mac</name>
+<!--
+			<email>name.surname@domain.tld</email>
 			<link>http://www.gamesite.com/</link>
+-->
 		</platform>
 		<platform>
 			<name>Steam</name>
@@ -93,19 +96,19 @@
 			<description>This is a rather insignificant quote by a highly important person.</description>
 			<name>Person Name</name>
 			<website>Website</website>
-			<link>http://</link>
+			<link>http://some.domain.tld/this-link</link>
 		</quote>
 		<quote>
 			<description>An extremely positive quote from a rather insignificant person. Also great.</description>
 			<name>Some Guy</name>
 			<website>This Page Is Visited By 12 Visitors A Month</website>
-			<link>http://</link>
+			<link>http://some.domain.tld/this-link</link>
 		</quote>
 		<quote>
 			<description>I pretend to love this game even though I do not actually understand it.</description>
 			<name>Pretentious Bastard</name>
 			<website>Artsy Page</website>
-			<link>http://</link>
+			<link>http://some.domain.tld/this-link</link>
 		</quote>
 		<quote>
 			<description>HOLY SHIT SO AMAZING</description>
@@ -114,6 +117,22 @@
 			<link>http://</link>
 		</quote>
 	</quotes>
+	
+	<!-- can be: 
+		- false          = (no video allowed),
+		- ask            = (permission on case-per-case basis),
+		- non-commercial = (no monetization allowed),
+		- monetize       = (full permission)
+        - @company       = shared from company
+	-->	
+	<monetization-permission>@company</monetization-permission>
+    
+	<!--
+		can be:
+		- missing/empty
+		- @company = shared from company
+	-->
+	<socials>@company</socials>
 	
 	<additionals>
 		<additional>

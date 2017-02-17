@@ -1,122 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <language>
-	<!-- Set for texts used in 'index.php', and other pages --> 
 	<set>
-		<translation>
-			<base>Language: </base>
-			<local>Language: </local>
-		</translation>
-		<translation>
-			<base>Factsheet</base>
-			<local>Factsheet</local>
-		</translation>
-		<translation>
-			<base>Description</base>
-			<local>Description</local>
-		</translation>
-		<translation>
-			<base>History</base>
-			<local>History</local>
-		</translation>
-		<translation>
-			<base>Projects</base>
-			<local>Projects</local>
-		</translation>
-		<translation>
-			<base>Videos</base>
-			<local>Videos</local>
-		</translation>
-		<translation>
-			<base>Images</base>
-			<local>Images</local>
-		</translation>
-		<translation>
-			<base>Logo &amp; Icon</base>
-			<local>Logo &amp; Icon</local>
-		</translation>
-		<translation>
-			<base>Awards &amp; Recognition</base>
-			<local>Awards &amp; Recognition</local>
-		</translation>
-		<translation>
-			<base>Selected Articles</base>
-			<local>Selected Articles</local>
-		</translation>
-		<translation>
-			<base>Additional Links</base>
-			<local>Additional Links</local>
-		</translation>
-		<translation>
-			<base>Team</base>
-			<local>Team</local>
-		</translation>
-		<translation>
-			<base>Contact</base>
-			<local>Contact</local>
-		</translation>
-		<translation>
-			<base>Developer:</base>
-			<local>Developer:</local>
-		</translation>
-		<translation>
-			<base>Based in %s</base>
-			<local>Based in %s</local>
-		</translation>
-		<translation>
-			<base>Founding date:</base>
-			<local>Founding date:</local>
-		</translation>
-		<translation>
-			<base>Website:</base>
-			<local>Website:</local>
-		</translation>
-		<translation>
-			<base>Press / Business Contact:</base>
-			<local>Press / Business contact:</local>
-		</translation>
-		<translation>
-			<base>Social:</base>
-			<local>Social:</local>
-		</translation>
-		<translation>
-			<base>Releases:</base>
-			<local>Releases:</local>
-		</translation>
-		<translation>
-			<base>Address:</base>
-			<local>Address:</local>
-		</translation>
-		<translation>
-			<base>Phone:</base>
-			<local>Phone:</local>
-		</translation>
-		<translation>
-			<base><![CDATA[There are currently no trailers available for %s. Check back later for more or <a href="#contact">contact us</a> for specific requests!]]></base>
-			<local><![CDATA[There are currently no trailers available for %s. Check back later for more or <a href="#contact">contact us</a> for specific requests!]]></local>
-		</translation>
-		<translation>
-			<base><![CDATA[There are far more images available for %s, but these are the ones we felt would be most useful to you. If you have specific requests, please do <a href="#contact">contact us</a>!]]></base>
-			<local><![CDATA[There are far more images available for %s, but these are the ones we felt would be most useful to you. If you have specific requests, please do <a href="#contact">contact us</a>!]]></local>
-		</translation>
-		<translation>
-			<base>download logo files as .zip (%s)</base>
-			<local>download logo files as .zip (%s)</local>
-		</translation>
-		<translation>
-			<base><![CDATA[There are currently no logos or icons available for %s. Check back later for more or <a href="#contact">contact us</a> for specific requests!]]></base>
-			<local><![CDATA[There are currently no logos or icons available for %s. Check back later for more or <a href="#contact">contact us</a> for specific requests!]]></local>
-		</translation>
-		<translation>
-			<base>Team &amp; Repeating Collaborators</base>
-			<local>Team &amp; Repeating Collaborator</local>
-		</translation>
-		<translation>
-			<base>Contact</base>
-			<local>Contact</local>
-		</translation>
-	</set>
-	<!-- Set for additional texts used in 'sheet.php', the '_template/index.php' file --> 
-	<set>
+		<!-- release-page -->
 		<translation>
 			<base>Request Press Copy</base>
 			<local>Request Press Copy</local>
@@ -235,7 +120,18 @@
 		</translation>
 		<translation>
 			<base>press kit</base>
-			<local>press kit</local>
+			<local>&lt;&lt; Back to: press kit.</local>
+		</translation>
+		<translation>
+			<base>Available:</base>
+			<local>Available:</local>
+		</translation>
+		
+		
+		<!-- company-page -->
+		<translation>
+			<base>Based in %s</base>
+			<local>Based in %s.</local>
 		</translation>
 	</set>	
 </language>

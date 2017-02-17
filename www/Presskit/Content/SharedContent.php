@@ -1,41 +1,54 @@
 <?php
 
-namespace Presskit;
+namespace Presskit\Content;
 
 use Presskit\Value\Text;
 use Presskit\Value\Website;
-use Presskit\Value\URL;
-use Presskit\Value\Contact;
 use Presskit\Value\History;
 use Presskit\Value\Trailer;
 use Presskit\Value\Award;
 use Presskit\Value\Quote;
 use Presskit\Value\AdditionalLink;
 use Presskit\Value\Credit;
+use Presskit\Value\Contact;
 
 /**
  * @SuppressWarnings(PHPMD.TooManyFields)
 */
-class Content
+abstract class SharedContent
+implements Content
 {
+	const MONETIZATION_ASK            = 'ask';
+	const MONETIZATION_NON_COMMERCIAL = 'non-commercial';
+	const MONETIZATION_MONETIZE       = 'monetize';
+	const MONETIZATION_FALSE          = 'false';
+	const MONETIZATION_SHARED_COMPANY = '@company';
+
     private $title = '';
-    private $foundingDate = '';
-    private $releaseDate = '';
-    private $website = '';
-    private $pressContact = '';
-    private $location = '';
-    private $socialContacts = [];
-    private $address = [];
-    private $phone = '';
-    private $description = '';
-    private $history = [];
-    private $features = [];
-    private $trailers = [];
+	private $website = '';
+	private $description = '';
+	private $trailers = [];
     private $awards = [];
     private $quotes = [];
     private $additionalLinks = [];
     private $credits = [];
-    private $contacts = [];
+    private $history = [];
+	private $additionalInfo = [];
+	private $hasMonetization = null;
+	private $monetization = null;
+	private $skipEmpty = [];
+	private $socialContacts = [];
+
+
+	public function setSkipEmpty($key, $value)
+	{
+		$this->skipEmpty[$key] = $this->getBoolean($value);
+	}
+
+	public function hasSkipEmpty($key)
+	{
+		return isset($this->skipEmpty[$key]);
+	}
 
     public function setTitle($title)
     {
@@ -45,26 +58,6 @@ class Content
     public function getTitle()
     {
         return $this->title;
-    }
-
-    public function setFoundingDate($date)
-    {
-        $this->foundingDate = new Text($date);
-    }
-
-    public function getFoundingDate()
-    {
-        return $this->foundingDate;
-    }
-
-    public function setReleaseDate($date)
-    {
-        $this->releaseDate = new Text($date);
-    }
-
-    public function getReleaseDate()
-    {
-        return $this->releaseDate;
     }
 
     public function setWebsite($website)
@@ -79,64 +72,6 @@ class Content
         }
 
         return $this->website;
-    }
-
-    public function setPressContact($contact)
-    {
-        $this->pressContact = new Text($contact);
-    }
-
-    public function getPressContact()
-    {
-        return $this->pressContact;
-    }
-
-    public function setLocation($location)
-    {
-        $this->location = new Text($location);
-    }
-
-    public function getLocation()
-    {
-        return $this->location;
-    }
-
-    public function addSocialContact($name, $uri)
-    {
-        $contact = new Contact($name, $uri, '');
-
-        if ((string) $contact !== '') {
-            $this->socialContacts[] = $contact;
-        }
-    }
-
-    public function getSocialContacts()
-    {
-        return $this->socialContacts;
-    }
-
-    public function addAddressLine($addressLine)
-    {
-        $addressLine = new Text($addressLine);
-
-        if ((string) $addressLine !== '') {
-            $this->address[] = $addressLine;
-        }
-    }
-
-    public function getAddress()
-    {
-        return $this->address;
-    }
-
-    public function setPhone($phone)
-    {
-        $this->phone = new Text($phone);
-    }
-
-    public function getPhone()
-    {
-        return $this->phone;
     }
 
     public function setDescription($description)
@@ -161,20 +96,6 @@ class Content
     public function getHistory()
     {
         return $this->history;
-    }
-
-    public function addFeature($feature)
-    {
-        $feature = new Text($feature);
-
-        if ((string) $feature !== '') {
-            $this->features[] = $feature;
-        }
-    }
-
-    public function getFeatures()
-    {
-        return $this->features;
     }
 
     public function addTrailer($name, $locations)
@@ -247,17 +168,82 @@ class Content
         return $this->credits;
     }
 
-    public function addContact($name, $website, $email)
+	public function setAdditionalInfo($additionalInfo)
+	{
+		$this->additionalInfo = $additionalInfo;
+	}
+
+	public function getAdditionalInfo()
+	{
+		$obj = (Object)$this->additionalInfo;
+		return $obj;
+	}
+
+	public function setMonetization($monetization)
+	{
+		$monetization = strtolower(trim($monetization));
+		switch($monetization)
+		{
+			case self::MONETIZATION_ASK:
+			case self::MONETIZATION_NON_COMMERCIAL:
+			case self::MONETIZATION_MONETIZE:
+			{
+				$this->hasMonetization = true;
+				$this->monetization = $monetization;
+				break;
+			}
+			case self::MONETIZATION_SHARED_COMPANY:
+			{
+				$this->hasMonetization = null;
+				$this->monetization = $monetization;
+				break;
+			}
+			case self::MONETIZATION_FALSE:
+			default:
+			{
+				$this->hasMonetization = false;
+				$this->monetization = $monetization;
+				break;
+			}
+		}
+	}
+
+	public function getMonetization()
+	{
+		return $this->monetization;
+	}
+
+	public function hasMonetization()
+	{
+		return $this->hasMonetization;
+	}
+
+	private function getBoolean($value)
+	{
+		if (
+			   preg_match('/^(yes|true|t|1)/i', (string)$value)
+			|| $value === true
+		   )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+    public function addSocialContact($name, $uri)
     {
-        $contact = new Contact($name, $website, $email);
+        $contact = new Contact($name, $uri, '');
 
         if ((string) $contact !== '') {
-            $this->contacts[] = $contact;
+            $this->socialContacts[] = $contact;
         }
     }
 
-    public function getContacts()
+    public function getSocialContacts()
     {
-        return $this->contacts;
+        return $this->socialContacts;
     }
 }

@@ -1,4 +1,8 @@
-<?php 
+<?php
+
+namespace Presskit;
+
+// TODO: rewrite this class (~its static omg)!
 class TranslateTool
 {
 	static protected $_translations;
@@ -9,15 +13,26 @@ class TranslateTool
 	static protected $_language;
 	static protected $_defaultLanguage;
 	static protected $_languages;
+
+	static public $languageDir = __DIR__;
+	static public $prevLanguageDir = null;
+
 	
 	public static function getLanguages()
 	{
+		if (self::$languageDir != self::$prevLanguageDir)
+		{
+			self::$_languages = null;
+			self::$prevLanguageDir = self::$languageDir;
+		}
+
 		if (!isset(self::$_languages))
 		{
-			$languages = array(
-				'en' => 'English',
-			);
-			if ($handle = opendir(dirname(__FILE__))) 
+			$languages = array();
+			if (
+				   is_readable(self::$languageDir)
+				&& $handle = opendir(self::$languageDir)
+			   )
 			{
 				while (false !== ($entry = readdir($handle))) 
 				{
@@ -28,6 +43,13 @@ class TranslateTool
 					}
 				}
 			}
+			ksort($languages);
+			$languages = array_merge(
+				array(
+					'en' => 'English',
+				),
+				$languages
+			);
 			
 			self::$_languages = $languages;
 			self::$_defaultLanguage = key($languages);
@@ -35,25 +57,29 @@ class TranslateTool
 		return self::$_languages;
 	}
 
-	public static function loadLanguage($language, $file)
+	public static function loadLanguage($languageDir, $languageId)
 	{
 		$languages = self::getLanguages();
 
-		if (!isset($languages[$language]))
-			$language = self::$_defaultLanguage;
-		
-		self::$_language = $language;
-				
-		if (isset($languages[$language]) && file_exists(dirname(__FILE__) . '/'. $language .'-'. $languages[$language]. '.xml'))
+		if (!isset($languages[$languageId]))
 		{
-			$xml = simplexml_load_file(dirname(__FILE__) . '/'. $language .'-'. $languages[$language]. '.xml');
-			
+			$language = self::$_defaultLanguage;
+		}
+		
+		self::$_language = $languageId;
+		if (
+			   isset($languages[$languageId])
+			&& is_readable(($languageFilename = $languageDir.$languageId.'-'.$languages[$languageId].'.xml'))
+		   )
+		{
+			$xml = simplexml_load_file($languageFilename);
 			self::$_translations = array();
 			foreach ($xml as $set)
 			{
 				$setAttr = $set->attributes();
 				$setName = isset($setAttr['name']) ? $setAttr['name'] : 'default';
-				if (!isset($setAttr['filename']) || $setAttr['filename'] == $file)
+
+//				if (!isset($setAttr['filename']) || $setAttr['filename'] == $file)
 				{
 					foreach ($set as $translation)
 					{
@@ -62,7 +88,7 @@ class TranslateTool
 				}		
 			}
 		}
-		
+
 		return self::$_language;
 	}
 	
@@ -143,27 +169,4 @@ class TranslateTool
 	
 		return $xml;
 	}
-}
-
-// Convenience functions
-
-function tl($text)
-{
-	$args = func_get_args();
-	$args = array_slice($args, 1);
-	return TranslateTool::translate('default', $text, $args, false);
-}
-
-function tlSet($set, $text)
-{
-	$args = func_get_args();
-	$args = array_slice($args, 2);
-	return TranslateTool::translate($set, $text, $args, false);
-}
-
-function tlHtml($text)
-{
-	$args = func_get_args();
-	$args = array_slice($args, 1);
-	return TranslateTool::translate('default', $text, $args, true); 
 }

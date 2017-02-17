@@ -12,7 +12,8 @@ class Website
     {
         $value = (string) $value;
 
-        if ($value !== '' && filter_var($value, FILTER_VALIDATE_URL) && substr($value, 0, 4) === 'http') {
+        if ($value !== '' && filter_var($value, FILTER_VALIDATE_URL) && substr($value, 0, 4) === 'http')
+		{
             $this->url = $value;
 
             $host = parse_url($value, PHP_URL_HOST);

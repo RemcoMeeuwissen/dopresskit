@@ -9,7 +9,7 @@
 	
 	<press-contact>press-contact@company.com</press-contact>
 	<phone>+00 (1) 22 33 44 55 66</phone>
-	<address>
+	<address url="">
 		<line>Address Line 1</line>
 		<line>Address Line 2</line>
 		<line>Address Line 3</line>
@@ -21,7 +21,13 @@
 			<link>twitter.com/MyCompanyName</link>
 		</social>
 		<social>
-			<name>facebook.com/MyCompanyName</name>
+			<!--
+				social-font: http://www.dafont.com/social-shapes.font
+				-  add: your-own.css into "index.config.php"
+				-  css: @font-face { font-family: social-font; src: url("social_shapes.ttf"); } span.social { font-family: social-font; }
+				- here: htmlSpecialChars="true" and for "facebook": &lt;span style="font-size:200%;" class=&quot;social&quot;&gt;M&lt;/span&gt;
+			-->
+			<name htmlSpecialChars="false">facebook.com/MyCompanyName</name>
 			<link>facebook.com/MyCompanyName</link>
 		</social>
 		<social>
@@ -45,13 +51,15 @@
 		</history>
 	</histories>
 		
-	<trailers>
+	<trailers skipEmpty="false">
 		<trailer>
 			<name>This video is nice</name>
 			<youtube>7jQbITg0MSk</youtube>
 		</trailer>
 		<trailer>
 			<name>This one too</name>
+			<mp4>open-close.mp4</mp4> <!-- video as file in trailers/open-close.mp4 -->
+			<mov>http://www.steppublishers.com/sites/default/files/step.mov</mov> <!-- video as a link to download -->
 			<youtube>0CevOaYrYDA</youtube>
 			<vimeo>12536488</vimeo>
 		</trailer>
@@ -103,11 +111,17 @@
 		</quote>
 	</quotes>
 	
-	<press-can-request-copy>TRUE</press-can-request-copy> <!-- can be true or false -->
-	<monetization-permission>monetize</monetization-permission> <!-- can be: 	false (no video allowed),
-																			 	ask (permission on case-per-case basis),
-																			 	non-commercial (no monetization allowed),
-																			 	monetize (full permission) -->	
+	<!-- can be true or false -->
+	<press-can-request-copy>TRUE</press-can-request-copy> 
+
+	<!-- can be: 
+		- false          = (no video allowed),
+		- ask            = (permission on case-per-case basis),
+		- non-commercial = (no monetization allowed),
+		- monetize       = (full permission)
+	-->	
+	<monetization-permission>monetize</monetization-permission>
+
 	<additionals>
 		<additional>
 			<title>Company Link #1</title>
